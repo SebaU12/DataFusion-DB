@@ -25,16 +25,9 @@ Descomprime el archivo ZIP en la carpeta `datasets`. Esto debería crear un arch
 
 Ahora estás listo para procesar los datos:
 
-1. Abre un terminal y navega hasta la carpeta de tu proyecto.
-2. Inicia Jupyter Notebook con el siguiente comando:
-   ```bash
-   jupyter notebook
-   ```
-3. Abre el archivo `preprocess.ipynb`.
-4. Ejecuta las celdas del notebook para procesar los datos y generar el archivo `preprocess_data.csv`.
+1. Abre el archivo `preprocess.ipynb`.
+2. Ejecuta las celdas del notebook para procesar los datos y generar el archivo `preprocess_data.csv`.
 
 ## 5. Archivo Resultante
 
 Después de ejecutar el notebook, deberías obtener el archivo `preprocess_data.csv` en la carpeta de tu proyecto, listo para ser utilizado.
-
-¡Listo! Ahora puedes comenzar a analizar los datos de vino.
