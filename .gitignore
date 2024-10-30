@@ -2,6 +2,10 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.pdf
+dataset/*.csv
+dataset/*.json
+dataset/*.zip
 
 # C extensions
 *.so
