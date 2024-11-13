@@ -1,6 +1,7 @@
 import os
 import math
 import json
+import copy
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 ROOT_DIR = os.path.dirname(os.path.realpath(THIS_DIR))
@@ -73,7 +74,7 @@ class SPIMIInvert:
 
     def construct_pre_index(self):
         block_files = []
-        documentos = set()
+        self.documentos = {}
         for list_of_tokens in self.token_stream:
 
             dictionary = {}
@@ -84,7 +85,7 @@ class SPIMIInvert:
                     postings_list = self.getPostingsList(dictionary, token[0])
 
                 self.addToPostingsList(dictionary, token[0], (token[1], token[2], token[3]))
-                documentos.add(token[1])
+                self.documentos[token[1]] = 0
 
             self.block_number += 1
             terms = self.sortTerms(dictionary)
@@ -92,8 +93,8 @@ class SPIMIInvert:
             block_file = "/".join([self.output_directory, "".join([self.block_prefix, str(self.block_number), self.block_suffix])])
             block_files.append(self.writeBlockToDisk(terms, dictionary, block_file))
 
-        self.N = len(documentos)
-        #self.mergeBlocks(block_files, 0)
+        self.N = len(self.documentos)
+        
         return self.mergeBlocks(block_files, 0)
 
     @staticmethod
@@ -174,15 +175,14 @@ class SPIMIInvert:
         if output:
             terms = self.sortTerms(output)
             self.writeBlockToDisk(terms, output, current_block_file)
-
-        #if block1_complete == False:
-            #os.remove(block_fileQ)
-
         return block1_complete
 
  
 
     def mergeBlocks(self, block_files, merge_size):  #10, 2
+        if os.path.exists(self.output_index):
+            print("El archivo o directorio existe")
+            return self.get_index()
         n = pow(2,merge_size)
         print("Vuelta",n)
         if(len(block_files)/n < 1):
@@ -210,7 +210,6 @@ class SPIMIInvert:
             P = p + x #0 1 2 3 8
             Q = q+y
             
-            #Q = q + y #4 5 6 7 12
             
 
         #Limpiar block_files
@@ -255,44 +254,118 @@ class SPIMIInvert:
                     self.block_number += 1
                     term1 = next(terms1, None)
                 else:
-                    term1 = next(terms1, None)
-                    '''#Evaluar la creación de un bucket overflow o escribirlo en el bucket actual 
+                    print("ya existe en el índice", term1)
+                    #Ver la información del último lote para saber si lo traemos o no
                     cant_buckets = len(index[term1]["list_buckets"]) 
                     df_a = index[term1]["df"]
                     last_bucket_size = BLOCK_SIZE -(cant_buckets*BLOCK_SIZE - df_a)
 
+                    new_df = df_a
+
                     if( last_bucket_size < BLOCK_SIZE):
+                        #Traer el último lote, fusionarlo
+                        last_bucket_file = "/".join([self.output_directory, index[term1]["list_buckets"][cant_buckets-1]])
+                        last_bucket =self.readBlockToDict(last_bucket_file)
 
-                        #Traer el último bucket
-                        bucket_file = "/".join([self.output_directory, index[term1]["list_buckets"][cant_buckets-1]])
-                        bucket =self.readBlockToDict(bucket_file)
+                        termsL = iter(data[term1]["posting_list"])
+                        termL = next(termsL, None)
 
-                        i = 0
-                        cont = 0
-                        while()
-                        for doc in data[term1]["posting_list"]:
-                            terms1[doc] = data[term1]["posting_list"][doc]
-                            i += 1
+                        count = 0
+                        new_bucket = False
 
-                            #Si se llega al límite, entonces crear un bucketOverflow
+                        while termL is not None:
+                            if(count + df_a < BLOCK_SIZE):
+                                last_bucket[termL] = data[term1]["posting_list"][termL]
+                            else:
+                                #subir la información actual al bucket previo
+                                self.create_bucket(last_bucket_file, last_bucket)
+                                count = 0
+                                last_bucket = {}
+                                df_a = 0
+                                new_bucket = True
 
+                            termL = next(termsL, None)
+                            count +=1
+                            new_df += 1
 
-                        
+                        #nuevo bucket 
+                        if(new_bucket and last_bucket):
+                            self.block_number += 1
+                            bucket_name = "".join([self.block_prefix, str(self.block_number), self.block_suffix])
+                            last_bucket_file = "/".join([self.output_directory, bucket_name])  
+                            index[term1]["list_buckets"].append(bucket_name)
+
+                        index[term1]["df"] = new_df
+                        index[term1]["idf"] = round(math.log10(self.N/new_df),2)
+
+                        self.create_bucket(last_bucket_file, last_bucket)
+                        term1 = next(terms1, None)
+
                     else:
-                        pass
-                    pass  ''' 
-                    
-            #limpiar el bloque
-            os.remove(blocks_file[0])
-            blocks_file.pop(0)
-            print(blocks_file)
+                        #crear un nuevo bloque y agregarlo al índice 
+                        bucket_name = "".join([self.block_prefix, str(self.block_number), self.block_suffix])
+                        bucket_file = "/".join([self.output_directory, bucket_name])
+                        self.create_bucket(bucket_file, data[term1]["posting_list"])
+                        index[term1]["list_buckets"].append(bucket_name)
 
-        #construir indißce 
+                        new_df += len(data[term1]["posting_list"])
+
+                        index[term1]["df"] = new_df
+                        index[term1]["idf"] = round(math.log10(self.N/new_df),2)
+                        
+                        self.block_number += 1
+                        term1 = next(terms1, None)
+
+                    print(term1, new_df)
+                    
+
+            #limpiar el bloque
+            try:
+                os.remove(blocks_file[0])
+            except FileNotFoundError:
+                print(f"File {blocks_file[0]} not found.")
+            blocks_file.pop(0)   
+
+        #Calcular los tf_idf para el índice
+        for term in index:
+            for bucket in index[term]["list_buckets"]:
+                #Leer cada bucket
+                bucket_directory = "/".join([self.output_directory, bucket])
+                current_bucket =self.readBlockToDict(bucket_directory)
+                #calcular su tf_idf para cada documento dentro 
+                for doc in current_bucket:
+                    tf_idf = round(current_bucket[doc]["tf"] * index[term]["idf"],2)
+                    #print(term, "tienen un idf", tf_idf, "y un TF de",current_bucket[doc]["tf"], "para el documento", doc)
+                    current_bucket[doc]["tf_idf"] = tf_idf
+                    self.documentos[doc] = self.documentos[doc] + pow(tf_idf,2)
+                    #print(doc, "tiene una sumatoria de :", self.documentos[doc])
+
+                #Escribir el bucket de regreso, corregido 
+                self.create_bucket(bucket_directory, current_bucket)
+                       
+
+        #Calcular la norma para todos los documentos registrados
+        print(self.documentos)
+        norm = {}
+        for key, value in self.documentos.items():
+            norm[key] = round(math.sqrt(value),2)
+        print()    
+        print(norm)
+        index["norm"] = norm
+        #construir indice 
         self.create_bucket(self.output_index, index)
-        print(self.N)
-        return 1
+        return self.get_index
 
     def get_index(self):
-        #si no existe el archivo lo construye, en caso si exista lo regresa
-
-        pass
+        #Accede al archivo
+        try:
+            with open(self.output_index, 'r', encoding='utf-8') as file:
+                data = json.load(file)
+            return data
+        except FileNotFoundError:
+            print("Archivo no encontrado. Verifica la ruta.")
+        except json.JSONDecodeError:
+            print("Error al decodificar el archivo JSON.")
+        except Exception as e:
+            print(f"Error inesperado: {e}")
+        
