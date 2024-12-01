@@ -23,10 +23,11 @@ class KNNApp(QMainWindow):
         self.setCentralWidget(container)
 
     def initUI(self):
+        # Insert image
         self.insert_label = QLabel("Insertar Imagen")
         self.main_layout.addWidget(self.insert_label)
 
-        self.insert_button = QPushButton("Elige una imagen para insertar")
+        self.insert_button = QPushButton("Elegir imagen para insertar")
         self.insert_button.clicked.connect(self.insert_image)
         self.main_layout.addWidget(self.insert_button)
 
@@ -34,21 +35,21 @@ class KNNApp(QMainWindow):
         self.insert_preview.setAlignment(Qt.AlignCenter)
         self.main_layout.addWidget(self.insert_preview)
 
-        # Search section
+        # Search 
         self.search_label = QLabel("Search Nearest Images")
         self.main_layout.addWidget(self.search_label)
 
-        # Search Method
+        # Search metodo
         self.method_combo = QComboBox()
         self.method_combo.addItems(["Sequential (KNN)", "R-tree", "Faiss"])
         self.main_layout.addWidget(self.method_combo)
 
-        # k or Radius Input
+        # k o r 
         self.k_input = QLineEdit()
-        self.k_input.setPlaceholderText("Enter K or R (for range search)")
+        self.k_input.setPlaceholderText("Ingresa K (for KNN) o R (for range search)")
         self.main_layout.addWidget(self.k_input)
 
-        self.search_button = QPushButton("Image for Search")
+        self.search_button = QPushButton("Elegir Imagen para busqueda")
         self.search_button.clicked.connect(self.search_images)
         self.main_layout.addWidget(self.search_button)
 
@@ -72,6 +73,7 @@ class KNNApp(QMainWindow):
                 "Faiss": "/insert_image_high_d/"
             }
             url = url_map.get(method)
+
             full_url = f"http://127.0.0.1:8000{url}?image_path={encoded_path}"
 
             try:
