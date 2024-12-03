@@ -13,6 +13,7 @@ def connect_db():
     except Exception as e:
         print(f"Error conectando a la base de datos: {e}")
         return None
+
 def create_table(connection):
     create_table_query = """
     CREATE TABLE IF NOT EXISTS wines (

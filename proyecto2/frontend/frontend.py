@@ -67,9 +67,6 @@ class SQLParserDialog(QDialog):
             self.result_label.setText(f"Error: {e}")
 
     def parse_sql_query(self, sql_query):
-        """
-        Parse the SQL query to extract the WHERE clause and LIMIT value.
-        """
         import re
 
         match = re.match(
@@ -85,9 +82,8 @@ class SQLParserDialog(QDialog):
         self.results_table.setRowCount(0)
         self.results_table.setColumnCount(9)
         self.results_table.setHorizontalHeaderLabels([
-            "ID", "Country", "Description", "Designation", "Points", "Price",
-            "Province", "Region 1", "Region 2", "Taster Name", "Taster Twitter",
-            "Title", "Variety", "Winery"
+            "ID", "Title", "Country", "Description", "Designation", "Points", "Price",
+            "Province", "Region 1", "Region 2", "Taster Name", "Taster Twitter", "Variety", "Winery"
         ])
         
         for row_num, row_data in enumerate(results):
@@ -120,7 +116,6 @@ class SearchApp(QMainWindow):
     def initUI(self):
         main_layout = QVBoxLayout()
 
-        # Query
         input_group = QGroupBox("Búsqueda por Consulta")
         input_layout = QFormLayout()
 
@@ -144,7 +139,6 @@ class SearchApp(QMainWindow):
         input_group.setLayout(input_layout)
         main_layout.addWidget(input_group)
 
-        # metodo docid
         docid_group = QGroupBox("Búsqueda por DocID")
         docid_layout = QFormLayout()
 
@@ -158,17 +152,14 @@ class SearchApp(QMainWindow):
         docid_group.setLayout(docid_layout)
         main_layout.addWidget(docid_group)
 
-        # Resultados
         self.results_table = QTableWidget()
         self.results_table.setColumnCount(14)
         self.results_table.setHorizontalHeaderLabels([
-            "ID", "Country", "Description", "Designation", "Points", "Price",
-            "Province", "Region 1", "Region 2", "Taster Name", "Taster Twitter",
-            "Title", "Variety", "Winery"
+            "ID", "Title", "Country", "Description", "Designation", "Points", "Price",
+            "Province", "Region 1", "Region 2", "Taster Name", "Taster Twitter", "Variety", "Winery"
         ])
         main_layout.addWidget(self.results_table)
 
-        # Abrir PARSER
         self.sql_parser_button = QPushButton("Abrir Parser SQL")
         self.sql_parser_button.clicked.connect(self.open_sql_parser)
         main_layout.addWidget(self.sql_parser_button)
@@ -193,7 +184,7 @@ class SearchApp(QMainWindow):
             response.raise_for_status()
 
             data = response.json()
-            self.display_results(data["result"])
+            self.display_query_results(data["result"])
         except Exception as e:
             print(f"Error: {e}")
 
@@ -203,7 +194,7 @@ class SearchApp(QMainWindow):
         if not docid:
             return
 
-        url = "http://127.0.0.1:8000/docid"
+        url = "http://127.0.0.1:8000/docID"
         payload = {"docId": int(docid)}
 
         try:
@@ -211,31 +202,41 @@ class SearchApp(QMainWindow):
             response.raise_for_status()
 
             data = response.json()
-            self.display_results([data])
+            self.display_docid_results(data)
         except Exception as e:
             print(f"Error: {e}")
 
-    def display_results(self, results):
+    def display_query_results(self, results):
         self.results_table.setRowCount(0)
 
         for row_data in results:
             row_num = self.results_table.rowCount()
             self.results_table.insertRow(row_num)
 
-            self.results_table.setItem(row_num, 0, QTableWidgetItem(str(row_data.get("id", ""))))
-            self.results_table.setItem(row_num, 1, QTableWidgetItem(row_data.get("country", "")))
-            self.results_table.setItem(row_num, 2, QTableWidgetItem(row_data.get("description", "")))
-            self.results_table.setItem(row_num, 3, QTableWidgetItem(row_data.get("designation", "")))
-            self.results_table.setItem(row_num, 4, QTableWidgetItem(str(row_data.get("points", ""))))
-            self.results_table.setItem(row_num, 5, QTableWidgetItem(str(row_data.get("price", ""))))
-            self.results_table.setItem(row_num, 6, QTableWidgetItem(row_data.get("province", "")))
-            self.results_table.setItem(row_num, 7, QTableWidgetItem(row_data.get("region_1", "")))
-            self.results_table.setItem(row_num, 8, QTableWidgetItem(row_data.get("region_2", "")))
-            self.results_table.setItem(row_num, 9, QTableWidgetItem(row_data.get("taster_name", "")))
-            self.results_table.setItem(row_num, 10, QTableWidgetItem(row_data.get("taster_twitter_handle", "")))
-            self.results_table.setItem(row_num, 11, QTableWidgetItem(row_data.get("title", "")))
-            self.results_table.setItem(row_num, 12, QTableWidgetItem(row_data.get("variety", "")))
-            self.results_table.setItem(row_num, 13, QTableWidgetItem(row_data.get("winery", "")))
+            self.results_table.setItem(row_num, 0, QTableWidgetItem(str(row_data[0])))
+            self.results_table.setItem(row_num, 1, QTableWidgetItem(row_data[1]))
+            self.results_table.setItem(row_num, 2, QTableWidgetItem(str(row_data[2])))
+
+    def display_docid_results(self, data):
+        self.results_table.setRowCount(0)
+
+        row_num = self.results_table.rowCount()
+        self.results_table.insertRow(row_num)
+
+        self.results_table.setItem(row_num, 0, QTableWidgetItem(str(data.get("id", ""))))
+        self.results_table.setItem(row_num, 1, QTableWidgetItem(data.get("title", "")))
+        self.results_table.setItem(row_num, 2, QTableWidgetItem(data.get("country", "")))
+        self.results_table.setItem(row_num, 3, QTableWidgetItem(data.get("description", "")))
+        self.results_table.setItem(row_num, 4, QTableWidgetItem(data.get("designation", "")))
+        self.results_table.setItem(row_num, 5, QTableWidgetItem(str(data.get("points", ""))))
+        self.results_table.setItem(row_num, 6, QTableWidgetItem(str(data.get("price", ""))))
+        self.results_table.setItem(row_num, 7, QTableWidgetItem(data.get("province", "")))
+        self.results_table.setItem(row_num, 8, QTableWidgetItem(data.get("region_1", "")))
+        self.results_table.setItem(row_num, 9, QTableWidgetItem(data.get("region_2", "")))
+        self.results_table.setItem(row_num, 10, QTableWidgetItem(data.get("taster_name", "")))
+        self.results_table.setItem(row_num, 11, QTableWidgetItem(data.get("taster_twitter_handle", "")))
+        self.results_table.setItem(row_num, 12, QTableWidgetItem(data.get("variety", "")))
+        self.results_table.setItem(row_num, 13, QTableWidgetItem(data.get("winery", "")))
 
     def open_sql_parser(self):
         dialog = SQLParserDialog()
