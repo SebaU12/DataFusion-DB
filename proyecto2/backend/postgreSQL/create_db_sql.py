@@ -176,18 +176,14 @@ def search_with_similarity(connection, search_terms, k):
 
 
 
-#connection = connect_db()
-#create_table(connection)
-#load_csv(connection, "/Users/smdp/Documents/PERSONAL/DB2/DataFusion-DB/proyecto2/backend/dataset/preprocess_data.csv", 20)
+'''connection = connect_db()
+create_table(connection)
+load_csv(connection, "/Users/smdp/Documents/PERSONAL/DB2/DataFusion-DB/proyecto2/backend/dataset/preprocess_data.csv", 64000)
+create_extensions(connection)
+create_tsvector_column(connection)
+create_gin_index(connection)
+connection.close()'''
 
-
-#create_extensions(connection)
-
-#create_tsvector_column(connection)
-
-#create_gin_index(connection)
 #search_terms = ['underscor', 'snappi', 'of', 'snappi', 'underscor', 'underscor', 'acidity']
 #print(search_with_similarity(connection, search_terms, 2))
-
 # Cerrar la conexión
-#connection.close()

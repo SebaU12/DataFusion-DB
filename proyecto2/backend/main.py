@@ -7,6 +7,7 @@ from postgreSQL.create_db_sql import connect_db, search_with_similarity
 from indexing.spimiIF import SPIMIInvert
 from indexing.query import Query
 import time
+import pandas as pd
 
 app = FastAPI()
 
@@ -14,6 +15,10 @@ class QueryRequest(BaseModel):
     database: str
     query: str
     K: int
+
+class docRequest(BaseModel):
+    docId: int
+
 
 csv_file = "/Users/smdp/Documents/PERSONAL/DB2/DataFusion-DB/proyecto2/backend/dataset/preprocess_data.csv"
 norm_file ="/Users/smdp/Documents/PERSONAL/DB2/DataFusion-DB/proyecto2/backend/INDEX/norm.dat"
@@ -44,6 +49,22 @@ async def insert_image_sequential(request: QueryRequest):
         elapsed_time = end_time - start_time
         result = {"result": query_result, "time": elapsed_time}
         return result
+
+
+@app.post("/docID")
+async def insert_image_sequential(request: docRequest):
+    chunk_size = 100
+    chunk_iter = pd.read_csv(csv_file, chunksize=chunk_size)
+        
+    chunk_number = request.docId// chunk_size
+    row_within_chunk = request.docId % chunk_size
+    
+    for i, chunk in enumerate(chunk_iter):
+        if i == chunk_number:
+            row = chunk.iloc[row_within_chunk, :14]
+            row = row.where(pd.notna(row), None)
+            return row.to_dict()
+    return []
 
 
 if __name__ == "__main__":

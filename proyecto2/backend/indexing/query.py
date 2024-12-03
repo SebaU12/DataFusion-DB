@@ -113,7 +113,7 @@ class Query:
 
         return results
 
-    def get_title_at_row(self, row_index, chunk_size=10):
+    def get_title_at_row(self, row_index, chunk_size=100):
         chunk_iter = pd.read_csv(self.csv_file, chunksize=chunk_size)
         
         chunk_number = row_index // chunk_size
@@ -164,7 +164,7 @@ class Query:
             if(score == 0): continue
             title = self.get_title_at_row(docId)
             result.append((docId, title, score))
-
+            
         return result
         
 

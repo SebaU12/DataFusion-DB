@@ -14,8 +14,8 @@ from nltk.stem import SnowballStemmer
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 ROOT_DIR = os.path.dirname(os.path.realpath(THIS_DIR))
 
-MAX_MEMORY_MB = 1  
-MAX_MEMORY_BYTES = MAX_MEMORY_MB * 1024   # * 1024 Convertir a bytes
+MAX_MEMORY_KB = 10  
+MAX_MEMORY_BYTES = MAX_MEMORY_KB * 1024 #Convertir a bytes
 
 
 
@@ -122,8 +122,8 @@ class SPIMIInvert:
 
     def readCSVB(self):
         if os.path.exists(self.output_index): return self.get_index()
-        chunk_size = 5  # Chunk
-        max_lines = 20  # Número total de líneas a procesar
+        chunk_size = 100  # Chunk
+        max_lines = 64000 # NUMERO TOTAL
         total_processed = 0  # Líneas procesadas
 
         #all_results = []  
@@ -155,7 +155,7 @@ class SPIMIInvert:
         dictionary = {}
         for token in self.token_stream:
             current_memory = sys.getsizeof(dictionary)
-            if(current_memory >= MAX_MEMORY_BYTES/5):
+            if(current_memory >= MAX_MEMORY_BYTES):
                 self.block_number += 1
                 terms = self.sortTerms(dictionary)
 
@@ -281,7 +281,7 @@ class SPIMIInvert:
 
             current_memory = sys.getsizeof(output)
 
-            if(current_memory >= MAX_MEMORY_BYTES/5):
+            if(current_memory >= MAX_MEMORY_BYTES):
                 #print(output) #CORREGIR
                 terms = self.sortTerms(output)
                 self.writeBlockToDisk(terms, output, self.block_files[i])
