@@ -44,6 +44,7 @@ function App() {
       k: searchType === "knn" ? parseInt(k) : undefined,
       radius: searchType === "range" ? parseFloat(radius) : undefined,
     };
+    console.log(body)
 
     let url = "";
     if (method === "sequential") {

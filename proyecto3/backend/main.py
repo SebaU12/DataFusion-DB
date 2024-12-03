@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 from knn_models.knn_sequential import KnnSequential
@@ -7,6 +8,14 @@ from knn_models.knn_high_d import KnnHighD
 import uvicorn
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"],  
+)
 
 # Inicialización de las clases
 knn_sequential = KnnSequential(data_file="knn_sequential_data.csv")
@@ -66,7 +75,9 @@ async def knn_search_sequential(request: KNNRequest):
         query_vector = knn_sequential.extract_features(request.query_image_path)
         query_vector = knn_sequential.normalize_feature_vector(query_vector).cpu().numpy().flatten()
         closest_images = knn_sequential.knn_search(query_vector, k=request.k)
-        return {"status": "success", "message": "KNN search completed", "results": closest_images}
+        res = {"status": "success", "message": "KNN search completed", "results": closest_images}
+        print(res)
+        return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to perform KNN search: {e}")
 
