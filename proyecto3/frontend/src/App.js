@@ -16,10 +16,16 @@ function App() {
       alert("Por favor, ingresa la ruta de una imagen.");
       return;
     }
-    
+
+    const body = {
+      image_path: imagePath, // Enviar solo el path de la imagen
+    };
+
     try {
-      const response = await fetch(`${url}?image_path=${encodeURIComponent(imagePath)}`, {
+      const response = await fetch(url, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body), // Pasar el path como JSON
       });
       const data = await response.json();
       setInsertMessage(data.message || "Imagen insertada correctamente.");
@@ -66,7 +72,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Busqueda de Imágenes con KNN</h1>
+        <h1>Búsqueda de Imágenes con KNN</h1>
       </header>
       <main>
         <section>
@@ -93,13 +99,16 @@ function App() {
 
         <section>
           <h2>Selecciona una técnica de búsqueda</h2>
-          <select onChange={(e) => {
-            const selectedMethod = e.target.value;
-            setMethod(selectedMethod);
-            if (selectedMethod === "rtree" || selectedMethod === "high_d") {
-              setSearchType("knn");
-            }
-          }} value={method}>
+          <select
+            onChange={(e) => {
+              const selectedMethod = e.target.value;
+              setMethod(selectedMethod);
+              if (selectedMethod === "rtree" || selectedMethod === "high_d") {
+                setSearchType("knn");
+              }
+            }}
+            value={method}
+          >
             <option value="sequential">Secuencial</option>
             <option value="rtree">R-tree</option>
             <option value="high_d">Alta Dimensión</option>
@@ -116,7 +125,7 @@ function App() {
           </section>
         )}
 
-        {(searchType === "knn") && (
+        {searchType === "knn" && (
           <section>
             <h2>Introduce el número de vecinos (k)</h2>
             <input
@@ -157,19 +166,11 @@ function App() {
           {results.length > 0 && (
             <div className="results">
               <h2>Resultados</h2>
-              <div className="image-grid">
+              <ul>
                 {results.map((result, index) => (
-                  <div key={index} className="result-item">
-                    <img
-                      src={result}
-                      alt={`Resultado ${index}`}
-                      className="thumbnail"
-                      style={{ width: "100px", height: "100px", objectFit: "cover" }}
-                    />
-                    <p>Imagen {index + 1}</p>
-                  </div>
+                  <li key={index}>{result}</li>
                 ))}
-              </div>
+              </ul>
             </div>
           )}
         </section>
