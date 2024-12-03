@@ -1,3 +1,4 @@
+/* General styles for the app */
 .App {
   font-family: Arial, sans-serif;
   text-align: center;
@@ -11,18 +12,24 @@
   padding: 10px 20px;
 }
 
+/* Section styling */
 section {
   margin: 20px 0;
 }
 
-input[type="file"],
+/* Styling for inputs and selects */
+input[type="text"],
 input[type="number"],
 select {
   margin: 10px;
   padding: 8px;
   width: 300px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
 }
 
+/* Button styles */
 button {
   margin: 5px;
   padding: 10px;
@@ -31,27 +38,37 @@ button {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 14px;
 }
 
 button:hover {
   background-color: #45a049;
 }
+
+/* Styling for results section */
 .results {
-  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.image-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 10px;
-  justify-items: center;
+.image-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 10px;
 }
 
-.result-item {
-  text-align: center;
+.image-preview img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
-.thumbnail {
-  border-radius: 8px;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+.image-preview p {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #555;
 }
