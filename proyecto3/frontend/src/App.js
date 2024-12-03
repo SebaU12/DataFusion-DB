@@ -2,102 +2,58 @@ import React, { useState } from "react";
 import "./App.css";
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <h1>KNN Image Search</h1>
-      </header>
-      <main>
-        <InsertImage />
-        <Search />
-      </main>
-    </div>
-  );
-}
-
-const InsertImage = () => {
-  const [imagePath, setImagePath] = useState("");
-  const [preview, setPreview] = useState(null);
-  const [message, setMessage] = useState("");
-
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const path = URL.createObjectURL(file);
-      setImagePath(file.name);
-      setPreview(path);
-    }
-  };
-
-  const handleInsert = async (url) => {
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image_path: imagePath }),
-      });
-      const data = await response.json();
-      setMessage(data.message);
-    } catch (error) {
-      setMessage("Error al insertar la imagen.");
-    }
-  };
-
-  return (
-    <section>
-      <h2>Insertar Imagen</h2>
-      <input type="file" accept="image/*" onChange={handleFileSelect} />
-      {preview && <img src={preview} alt="Preview" className="preview" />}
-      <div>
-        <button onClick={() => handleInsert("http://127.0.0.1:8000/insert_image_sequential/")}>
-          Índice Secuencial
-        </button>
-        <button onClick={() => handleInsert("http://127.0.0.1:8000/insert_image_rtree/")}>
-          Índice R-tree
-        </button>
-        <button onClick={() => handleInsert("http://127.0.0.1:8000/insert_image_high_d/")}>
-          Índice High-D
-        </button>
-      </div>
-      {message && <p>{message}</p>}
-    </section>
-  );
-};
-
-const Search = () => {
   const [method, setMethod] = useState("sequential");
   const [searchType, setSearchType] = useState("knn");
-  const [queryImage, setQueryImage] = useState("");
-  const [preview, setPreview] = useState(null);
+  const [imagePath, setImagePath] = useState("");
+  const [searchImagePath, setSearchImagePath] = useState(""); // Para la ruta de búsqueda
+  const [radius, setRadius] = useState(1.0);
   const [k, setK] = useState(1);
-  const [start, setStart] = useState(0);
-  const [end, setEnd] = useState(0);
   const [results, setResults] = useState([]);
+  const [insertMessage, setInsertMessage] = useState("");
 
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const path = URL.createObjectURL(file);
-      setQueryImage(file.name);
-      setPreview(path);
+  const handleInsert = async (url) => {
+    if (!imagePath) {
+      alert("Por favor, ingresa la ruta de una imagen.");
+      return;
+    }
+
+    const insertUrl = `${url}?image_path=${encodeURIComponent(imagePath)}`;
+
+    try {
+      const response = await fetch(insertUrl, {
+        method: "POST",
+        headers: { "accept": "application/json" },
+        body: "",
+      });
+      const data = await response.json();
+      setInsertMessage(data.message || "Imagen insertada correctamente.");
+    } catch (error) {
+      setInsertMessage("Error al insertar la imagen.");
+      console.error("Error al insertar la imagen", error);
     }
   };
 
   const handleSearch = async () => {
-    let url = "";
-    let body = { query_image_path: queryImage };
+    if (!searchImagePath) {
+      alert("Por favor, ingresa la ruta de la imagen para la búsqueda.");
+      return;
+    }
 
+    const body = {
+      query_image_path: searchImagePath,
+      k: searchType === "knn" ? parseInt(k) : undefined,
+      radius: searchType === "range" ? parseFloat(radius) : undefined,
+    };
+
+    let url = "";
     if (method === "sequential") {
-      if (searchType === "knn") {
-        url = "http://127.0.0.1:8000/knn_search_sequential/";
-        body.k = parseInt(k);
-      } else {
-        url = "http://127.0.0.1:8000/range_search_sequential/";
-        body.radius = [parseFloat(start), parseFloat(end)];
-      }
-    } else if (method === "rtree" || method === "high_d") {
-      url = method === "rtree" ? "http://127.0.0.1:8000/knn_search_rtree/" : "http://127.0.0.1:8000/knn_search_high_d/";
-      body.k = parseInt(k);
+      url = searchType === "knn"
+        ? "http://127.0.0.1:8000/knn_search_sequential/"
+        : "http://127.0.0.1:8000/range_search_sequential/";
+    } else if (method === "rtree") {
+      url = "http://127.0.0.1:8000/knn_search_rtree/";
+    } else if (method === "high_d") {
+      url = "http://127.0.0.1:8000/knn_search_high_d/";
     }
 
     try {
@@ -109,67 +65,113 @@ const Search = () => {
       const data = await response.json();
       setResults(data.results || []);
     } catch (error) {
-      console.error("Error al realizar búsqueda", error);
+      console.error("Error al realizar la búsqueda", error);
     }
   };
 
   return (
-    <section>
-      <h2>Búsqueda</h2>
-      <div>
-        <label>Técnica:</label>
-        <select value={method} onChange={(e) => setMethod(e.target.value)}>
-          <option value="sequential">Secuencial</option>
-          <option value="rtree">R-tree</option>
-          <option value="high_d">High-D</option>
-        </select>
-      </div>
-      {method === "sequential" && (
-        <div>
-          <label>Tipo de Búsqueda:</label>
-          <select value={searchType} onChange={(e) => setSearchType(e.target.value)}>
-            <option value="knn">KNN</option>
-            <option value="range">Por Rango</option>
-          </select>
-        </div>
-      )}
-      <input type="file" accept="image/*" onChange={handleFileSelect} />
-      {preview && <img src={preview} alt="Preview" className="preview" />}
-      {searchType === "knn" && (
-        <input
-          type="number"
-          placeholder="Número de vecinos (k)"
-          value={k}
-          onChange={(e) => setK(e.target.value)}
-        />
-      )}
-      {searchType === "range" && method === "sequential" && (
-        <div>
+    <div className="App">
+      <header className="App-header">
+        <h1>Busqueda de Imágenes con KNN</h1>
+      </header>
+      <main>
+        <section>
+          <h2>Insertar Imagen</h2>
           <input
-            type="number"
-            placeholder="Inicio del rango"
-            value={start}
-            onChange={(e) => setStart(e.target.value)}
+            type="text"
+            placeholder="Ingresa el path local de la imagen"
+            value={imagePath}
+            onChange={(e) => setImagePath(e.target.value)}
           />
-          <input
-            type="number"
-            placeholder="Fin del rango"
-            value={end}
-            onChange={(e) => setEnd(e.target.value)}
-          />
-        </div>
-      )}
-      <button onClick={handleSearch}>Buscar</button>
-      <div className="results">
-        {results.map((result, index) => (
-          <div key={index}>
-            <p>{result}</p>
-            <img src={result} alt={`Resultado ${index}`} className="preview" />
+          <p>{imagePath && `Ruta seleccionada: ${imagePath}`}</p>
+          <div>
+            <button onClick={() => handleInsert("http://127.0.0.1:8000/insert_image_sequential/")}>
+              Insertar en Secuencial
+            </button>
+            <button onClick={() => handleInsert("http://127.0.0.1:8000/insert_image_rtree/")}>
+              Insertar en R-tree
+            </button>
+            <button onClick={() => handleInsert("http://127.0.0.1:8000/insert_image_high_d/")}>
+              Insertar en Alta Dimensión
+            </button>
           </div>
-        ))}
-      </div>
-    </section>
+          {insertMessage && <p>{insertMessage}</p>}
+          {imagePath && <img src={imagePath} alt="Imagen seleccionada" className="preview" />}
+        </section>
+
+        <section>
+          <h2>Selecciona una técnica de búsqueda</h2>
+          <select onChange={(e) => setMethod(e.target.value)} value={method}>
+            <option value="sequential">Secuencial</option>
+            <option value="rtree">R-tree</option>
+            <option value="high_d">Alta Dimensión</option>
+          </select>
+        </section>
+
+        {method === "sequential" && (
+          <section>
+            <h2>Elige el tipo de búsqueda</h2>
+            <select onChange={(e) => setSearchType(e.target.value)} value={searchType}>
+              <option value="knn">KNN</option>
+              <option value="range">Búsqueda por Rango</option>
+            </select>
+          </section>
+        )}
+
+        {method === "sequential" && searchType === "range" && (
+          <section>
+            <h2>Introduce el radio de búsqueda</h2>
+            <input
+              type="number"
+              step="0.1"
+              value={radius}
+              onChange={(e) => setRadius(e.target.value)}
+              placeholder="Radio"
+            />
+          </section>
+        )}
+
+        {method === "sequential" && searchType === "knn" && (
+          <section>
+            <h2>Introduce el número de vecinos (k)</h2>
+            <input
+              type="number"
+              value={k}
+              onChange={(e) => setK(e.target.value)}
+              placeholder="Número de vecinos"
+            />
+          </section>
+        )}
+
+        <section>
+          <h2>Ruta de imagen para búsqueda</h2>
+          <input
+            type="text"
+            placeholder="Ingresa el path local de la imagen para búsqueda"
+            value={searchImagePath}
+            onChange={(e) => setSearchImagePath(e.target.value)}
+          />
+          {searchImagePath && <img src={searchImagePath} alt="Imagen seleccionada para búsqueda" className="preview" />}
+        </section>
+
+        <button onClick={handleSearch}>Buscar</button>
+
+        <section>
+          {results.length > 0 && (
+            <div className="results">
+              <h2>Resultados</h2>
+              {results.map((result, index) => (
+                <div key={index} className="result-item">
+                  <p>{result}</p>
+                  <img src={result} alt={`Resultado ${index}`} className="preview" />
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+    </div>
   );
-};
+}
 
 export default App;
