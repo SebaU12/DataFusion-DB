@@ -35,6 +35,7 @@ class RangeSearchRequest(BaseModel):
 @app.post("/insert_image_sequential/")
 async def insert_image_sequential(image_path: str):
     """Inserta una imagen en el índice KNN (secuencial)."""
+    print(image_path)
     if not os.path.exists(image_path):
         raise HTTPException(status_code=404, detail="Image file not found")
     try:

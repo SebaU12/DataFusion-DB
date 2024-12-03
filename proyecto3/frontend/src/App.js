@@ -17,15 +17,10 @@ function App() {
       return;
     }
 
-    const body = {
-      image_path: imagePath, // Enviar solo el path de la imagen
-    };
-
+    
     try {
-      const response = await fetch(url, {
+      const response = await fetch(`${url}?image_path=${encodeURIComponent(imagePath)}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body), // Pasar el path como JSON
       });
       const data = await response.json();
       setInsertMessage(data.message || "Imagen insertada correctamente.");
