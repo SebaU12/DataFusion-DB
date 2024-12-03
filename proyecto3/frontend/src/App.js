@@ -16,7 +16,6 @@ function App() {
       alert("Por favor, ingresa la ruta de una imagen.");
       return;
     }
-
     
     try {
       const response = await fetch(`${url}?image_path=${encodeURIComponent(imagePath)}`, {
