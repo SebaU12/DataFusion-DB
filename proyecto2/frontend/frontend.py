@@ -1,6 +1,5 @@
 import sys
 import requests
-import time
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget,
     QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem,
@@ -33,7 +32,8 @@ class SQLParserDialog(QDialog):
 
         self.result_label = QLabel("Resultados aparecerán aquí.")
         layout.addWidget(self.result_label)
-
+        
+        self.result_label = QLabel(self) 
         self.setLayout(layout)
 
     def parse_and_execute(self):
@@ -55,13 +55,11 @@ class SQLParserDialog(QDialog):
             }
             url = "http://127.0.0.1:8000/database/query"
 
-            start_time = time.time()
             response = requests.post(url, json=payload)
             response.raise_for_status()
-            end_time = time.time()
 
             data = response.json()
-            self.display_results(data["result"], end_time - start_time)
+            self.display_results(data["result"], data["time"])
 
         except Exception as e:
             self.result_label.setText(f"Error: {e}")
@@ -125,7 +123,7 @@ class SearchApp(QMainWindow):
 
         self.query_input = QLineEdit()
         input_layout.addRow(QLabel("Consulta (Query):"), self.query_input)
-
+        
         self.k_input = QSpinBox()
         self.k_input.setMinimum(1)
         self.k_input.setMaximum(100)
@@ -151,6 +149,11 @@ class SearchApp(QMainWindow):
 
         docid_group.setLayout(docid_layout)
         main_layout.addWidget(docid_group)
+
+        self.segundos = 0
+        self.label_display = QLabel("El query fue ejecutado en "+ str(self.segundos) + " segundos.")
+        self.label_display.setAlignment(Qt.AlignCenter)  # Centrar el texto
+        main_layout.addWidget(self.label_display)
 
         self.results_table = QTableWidget()
         self.results_table.setColumnCount(14)
@@ -184,7 +187,7 @@ class SearchApp(QMainWindow):
             response.raise_for_status()
 
             data = response.json()
-            self.display_query_results(data["result"])
+            self.display_query_results(data["result"], data["time"])
         except Exception as e:
             print(f"Error: {e}")
 
@@ -206,7 +209,7 @@ class SearchApp(QMainWindow):
         except Exception as e:
             print(f"Error: {e}")
 
-    def display_query_results(self, results):
+    def display_query_results(self, results, elapsed_time):
         self.results_table.setRowCount(0)
 
         for row_data in results:
@@ -216,6 +219,9 @@ class SearchApp(QMainWindow):
             self.results_table.setItem(row_num, 0, QTableWidgetItem(str(row_data[0])))
             self.results_table.setItem(row_num, 1, QTableWidgetItem(row_data[1]))
             self.results_table.setItem(row_num, 2, QTableWidgetItem(str(row_data[2])))
+
+        self.segundos = elapsed_time
+        self.label_display.setText(f"Búsqueda completada en {elapsed_time:.2f} segundos.")
 
     def display_docid_results(self, data):
         self.results_table.setRowCount(0)
@@ -238,10 +244,10 @@ class SearchApp(QMainWindow):
         self.results_table.setItem(row_num, 12, QTableWidgetItem(data.get("variety", "")))
         self.results_table.setItem(row_num, 13, QTableWidgetItem(data.get("winery", "")))
 
-    def open_sql_parser(self):
-        dialog = SQLParserDialog()
-        dialog.exec_()
 
+    def open_sql_parser(self):
+        self.sql_parser_dialog = SQLParserDialog()
+        self.sql_parser_dialog.exec_()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
