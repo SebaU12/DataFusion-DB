@@ -1,29 +1,14 @@
 import React, { useState } from "react";
 import "./App.css";
 
-// Componente para mostrar previsualización de una imagen en los resultados
-function ImagePreview({ path, altText }) {
-  return (
-    <div className="image-preview">
-      <img
-        src={path}
-        alt={altText}
-        className="thumbnail"
-        style={{ width: "100px", height: "100px", objectFit: "cover" }}
-      />
-      <p>{altText}</p>
-    </div>
-  );
-}
-
 function App() {
   const [method, setMethod] = useState("sequential");
   const [searchType, setSearchType] = useState("knn");
-  const [imagePath, setImagePath] = useState(""); // Ruta de imagen para insertar
-  const [searchImagePath, setSearchImagePath] = useState(""); // Ruta de imagen para búsqueda
+  const [imagePath, setImagePath] = useState(""); // Para almacenar el path de la imagen de inserción
+  const [searchImagePath, setSearchImagePath] = useState(""); // Para la ruta de la imagen de búsqueda
   const [radius, setRadius] = useState(1.0);
   const [k, setK] = useState(1);
-  const [results, setResults] = useState([]); // Lista de resultados
+  const [results, setResults] = useState([]);
   const [insertMessage, setInsertMessage] = useState("");
 
   const handleInsert = async (url) => {
@@ -31,14 +16,10 @@ function App() {
       alert("Por favor, ingresa la ruta de una imagen.");
       return;
     }
-
-    const body = { image_path: imagePath };
-
+    
     try {
-      const response = await fetch(url, {
+      const response = await fetch(`${url}?image_path=${encodeURIComponent(imagePath)}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
       });
       const data = await response.json();
       setInsertMessage(data.message || "Imagen insertada correctamente.");
@@ -73,7 +54,7 @@ function App() {
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(body), // Pasar el path como JSON
       });
       const data = await response.json();
       setResults(data.results || []);
@@ -82,24 +63,19 @@ function App() {
     }
   };
 
-  const resetResults = () => {
-    setResults([]);
-  };
-
   return (
     <div className="App">
       <header className="App-header">
         <h1>Busqueda de Imágenes con KNN</h1>
       </header>
       <main>
-        {/* Insertar Imagen */}
         <section>
           <h2>Insertar Imagen</h2>
           <input
             type="text"
             placeholder="Ruta de la imagen"
             value={imagePath}
-            onChange={(e) => setImagePath(e.target.value)}
+            onChange={(e) => setImagePath(e.target.value)} // Cambiar el valor del path
           />
           <div>
             <button onClick={() => handleInsert("http://127.0.0.1:8000/insert_image_sequential/")}>
@@ -115,26 +91,21 @@ function App() {
           {insertMessage && <p>{insertMessage}</p>}
         </section>
 
-        {/* Selección de técnica */}
         <section>
           <h2>Selecciona una técnica de búsqueda</h2>
-          <select
-            onChange={(e) => {
-              const selectedMethod = e.target.value;
-              setMethod(selectedMethod);
-              if (selectedMethod === "rtree" || selectedMethod === "high_d") {
-                setSearchType("knn");
-              }
-            }}
-            value={method}
-          >
+          <select onChange={(e) => {
+            const selectedMethod = e.target.value;
+            setMethod(selectedMethod);
+            if (selectedMethod === "rtree" || selectedMethod === "high_d") {
+              setSearchType("knn");
+            }
+          }} value={method}>
             <option value="sequential">Secuencial</option>
             <option value="rtree">R-tree</option>
             <option value="high_d">Alta Dimensión</option>
           </select>
         </section>
 
-        {/* Configuración de búsqueda */}
         {method === "sequential" && (
           <section>
             <h2>Elige el tipo de búsqueda</h2>
@@ -145,7 +116,7 @@ function App() {
           </section>
         )}
 
-        {searchType === "knn" && (
+        {(searchType === "knn") && (
           <section>
             <h2>Introduce el número de vecinos (k)</h2>
             <input
@@ -170,7 +141,6 @@ function App() {
           </section>
         )}
 
-        {/* Imagen para búsqueda */}
         <section>
           <h2>Ruta de imagen para búsqueda</h2>
           <input
@@ -182,20 +152,22 @@ function App() {
         </section>
 
         <button onClick={handleSearch}>Buscar</button>
-        <button onClick={resetResults}>Reiniciar Resultados</button>
 
-        {/* Resultados */}
         <section>
           {results.length > 0 && (
             <div className="results">
               <h2>Resultados</h2>
               <div className="image-grid">
                 {results.map((result, index) => (
-                  <ImagePreview
-                    key={index}
-                    path={result}
-                    altText={`Resultado ${index + 1}`}
-                  />
+                  <div key={index} className="result-item">
+                    <img
+                      src={result}
+                      alt={`Resultado ${index}`}
+                      className="thumbnail"
+                      style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                    />
+                    <p>Imagen {index + 1}</p>
+                  </div>
                 ))}
               </div>
             </div>
