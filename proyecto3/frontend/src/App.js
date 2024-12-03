@@ -24,7 +24,7 @@ const InsertImage = () => {
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setImagePath(file.path); // Esto funciona en entornos donde se puede acceder a file.path (Electron, etc.)
+      setImagePath(file.path);
       setPreview(URL.createObjectURL(file));
     }
   };
