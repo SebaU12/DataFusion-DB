@@ -8,11 +8,15 @@
 .App-header {
   background-color: #282c34;
   color: white;
-  padding: 10px 20px;
+  padding: 20px;
 }
 
 section {
   margin: 20px 0;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
 }
 
 input {
@@ -35,15 +39,22 @@ button:hover {
   background-color: #45a049;
 }
 
+label {
+  margin: 0 10px;
+}
+
 .results {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  margin-top: 20px;
 }
 
 .preview {
-  width: 100px;
-  height: 100px;
+  width: 150px;
+  height: 150px;
   margin: 5px;
   object-fit: cover;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
