@@ -8,6 +8,7 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 
+
 class Query:
     def __init__(self, index, length_file, K_vecinos, csv_file):
         self.K = K_vecinos
