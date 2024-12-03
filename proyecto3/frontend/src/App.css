@@ -36,16 +36,22 @@ button {
 button:hover {
   background-color: #45a049;
 }
-
 .results {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  margin-top: 20px;
 }
 
-.preview {
-  width: 100px;
-  height: 100px;
-  margin: 5px;
-  object-fit: cover;
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  justify-items: center;
+}
+
+.result-item {
+  text-align: center;
+}
+
+.thumbnail {
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
