@@ -9,7 +9,7 @@ function App() {
       </header>
       <main>
         <InsertImage />
-        <SearchImage />
+        <Search />
       </main>
     </div>
   );
@@ -20,12 +20,12 @@ const InsertImage = () => {
   const [preview, setPreview] = useState(null);
   const [message, setMessage] = useState("");
 
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
     if (file) {
-      const fileURL = URL.createObjectURL(file);
-      setPreview(fileURL);
-      setImagePath(file.path || file.name);
+      const path = URL.createObjectURL(file);
+      setImagePath(file.name);
+      setPreview(path);
     }
   };
 
@@ -37,7 +37,7 @@ const InsertImage = () => {
         body: JSON.stringify({ image_path: imagePath }),
       });
       const data = await response.json();
-      setMessage(data.message || "Imagen insertada correctamente.");
+      setMessage(data.message);
     } catch (error) {
       setMessage("Error al insertar la imagen.");
     }
@@ -46,8 +46,8 @@ const InsertImage = () => {
   return (
     <section>
       <h2>Insertar Imagen</h2>
-      <input type="file" accept="image/*" onChange={handleFileChange} />
-      {preview && <img src={preview} alt="Vista previa" className="preview" />}
+      <input type="file" accept="image/*" onChange={handleFileSelect} />
+      {preview && <img src={preview} alt="Preview" className="preview" />}
       <div>
         <button onClick={() => handleInsert("http://127.0.0.1:8000/insert_image_sequential/")}>
           Índice Secuencial
@@ -64,41 +64,40 @@ const InsertImage = () => {
   );
 };
 
-const SearchImage = () => {
+const Search = () => {
+  const [method, setMethod] = useState("sequential");
+  const [searchType, setSearchType] = useState("knn");
   const [queryImage, setQueryImage] = useState("");
   const [preview, setPreview] = useState(null);
-  const [mode, setMode] = useState("knn");
-  const [technique, setTechnique] = useState("sequential");
   const [k, setK] = useState(1);
-  const [rangeStart, setRangeStart] = useState(0);
-  const [rangeEnd, setRangeEnd] = useState(1);
+  const [start, setStart] = useState(0);
+  const [end, setEnd] = useState(0);
   const [results, setResults] = useState([]);
 
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
     if (file) {
-      const fileURL = URL.createObjectURL(file);
-      setPreview(fileURL);
-      setQueryImage(file.path || file.name);
+      const path = URL.createObjectURL(file);
+      setQueryImage(file.name);
+      setPreview(path);
     }
   };
 
   const handleSearch = async () => {
     let url = "";
-    let body = {};
+    let body = { query_image_path: queryImage };
 
-    if (mode === "knn") {
-      url =
-        technique === "sequential"
-          ? "http://127.0.0.1:8000/knn_search_sequential/"
-          : technique === "rtree"
-          ? "http://127.0.0.1:8000/knn_search_rtree/"
-          : "http://127.0.0.1:8000/knn_search_high_d/";
-
-      body = { query_image_path: queryImage, k: parseInt(k) };
-    } else {
-      url = "http://127.0.0.1:8000/range_search_sequential/";
-      body = { query_image_path: queryImage, radius: parseFloat(rangeEnd - rangeStart) };
+    if (method === "sequential") {
+      if (searchType === "knn") {
+        url = "http://127.0.0.1:8000/knn_search_sequential/";
+        body.k = parseInt(k);
+      } else {
+        url = "http://127.0.0.1:8000/range_search_sequential/";
+        body.radius = [parseFloat(start), parseFloat(end)];
+      }
+    } else if (method === "rtree" || method === "high_d") {
+      url = method === "rtree" ? "http://127.0.0.1:8000/knn_search_rtree/" : "http://127.0.0.1:8000/knn_search_high_d/";
+      body.k = parseInt(k);
     }
 
     try {
@@ -110,65 +109,53 @@ const SearchImage = () => {
       const data = await response.json();
       setResults(data.results || []);
     } catch (error) {
-      console.error("Error en la búsqueda:", error);
+      console.error("Error al realizar búsqueda", error);
     }
   };
 
   return (
     <section>
-      <h2>Búsqueda de Imágenes</h2>
-      <input type="file" accept="image/*" onChange={handleFileChange} />
-      {preview && <img src={preview} alt="Vista previa" className="preview" />}
+      <h2>Búsqueda</h2>
       <div>
-        <label>
-          <input
-            type="radio"
-            value="knn"
-            checked={mode === "knn"}
-            onChange={() => setMode("knn")}
-          />
-          Búsqueda KNN
-        </label>
-        <label>
-          <input
-            type="radio"
-            value="range"
-            checked={mode === "range"}
-            onChange={() => setMode("range")}
-          />
-          Búsqueda por Rango
-        </label>
+        <label>Técnica:</label>
+        <select value={method} onChange={(e) => setMethod(e.target.value)}>
+          <option value="sequential">Secuencial</option>
+          <option value="rtree">R-tree</option>
+          <option value="high_d">High-D</option>
+        </select>
       </div>
-      <div>
-        <label>
-          Técnica:
-          <select value={technique} onChange={(e) => setTechnique(e.target.value)}>
-            <option value="sequential">Secuencial</option>
-            <option value="rtree">R-tree</option>
-            <option value="high_d">High-D</option>
+      {method === "sequential" && (
+        <div>
+          <label>Tipo de Búsqueda:</label>
+          <select value={searchType} onChange={(e) => setSearchType(e.target.value)}>
+            <option value="knn">KNN</option>
+            <option value="range">Por Rango</option>
           </select>
-        </label>
-      </div>
-      {mode === "knn" ? (
+        </div>
+      )}
+      <input type="file" accept="image/*" onChange={handleFileSelect} />
+      {preview && <img src={preview} alt="Preview" className="preview" />}
+      {searchType === "knn" && (
         <input
           type="number"
           placeholder="Número de vecinos (k)"
           value={k}
           onChange={(e) => setK(e.target.value)}
         />
-      ) : (
+      )}
+      {searchType === "range" && method === "sequential" && (
         <div>
           <input
             type="number"
             placeholder="Inicio del rango"
-            value={rangeStart}
-            onChange={(e) => setRangeStart(e.target.value)}
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
           />
           <input
             type="number"
             placeholder="Fin del rango"
-            value={rangeEnd}
-            onChange={(e) => setRangeEnd(e.target.value)}
+            value={end}
+            onChange={(e) => setEnd(e.target.value)}
           />
         </div>
       )}
